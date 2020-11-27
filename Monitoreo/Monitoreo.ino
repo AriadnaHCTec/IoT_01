@@ -13,6 +13,7 @@
 
 
 //Ariadna H
+// Luis Ignacio Ferro Salinas
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
