@@ -10,6 +10,9 @@
 
 // https://github.com/thehookup/Wireless_MQTT_Doorbell/blob/master/GPIO_Limitations_ESP8266_NodeMCU.jpg
 
+
+
+//Ariadna H
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
