@@ -16,7 +16,7 @@ DHT dht(dht_dpin, DHTTYPE);
 #include <ESP8266HTTPClient.h>
 const char *red = "INFINITUMC99E";//Ari: INFINITUMC99E
 const char *password = "FEw3Cp4M2j";//Ari: FEw3Cp4M2j
-String urlBase = "http://192.168.1.90/grabar/pruebainserta.php?fecha=2020-11-19&hora=22:05:20&valor=";  // GET?
+String urlBase = "http://192.168.1.90/grabar/insertaTemperatura.php?temperatura=";  // GET?
 HTTPClient http;
 WiFiClient clienteWiFi;
 
@@ -49,7 +49,8 @@ void loop() {
   promedioHumedad /= 10;  
 
   // Armar la ruta del servicio
-  String url = String( urlBase + String(promedioTemperatura) );
+  String url = String( urlBase + String(promedioTemperatura)+"&claveUsuario=1&modelo=DHT11");
+
   Serial.println(url);
 
   // Enviarlos por la red al servicio
