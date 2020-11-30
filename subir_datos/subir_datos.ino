@@ -16,7 +16,7 @@ DHT dht(dht_dpin, DHTTYPE);
 #include <ESP8266HTTPClient.h>
 const char *red = "INFINITUMC99E";//Ari: INFINITUMC99E
 const char *password = "FEw3Cp4M2j";//Ari: FEw3Cp4M2j
-String urlBase = "http://192.168.1.90/IoT/insertaTemperatura.php?temperatura=";  // GET?
+String urlBase = "http://192.168.1.90/IoT/insertaMedicion";  // GET? Ari: 192.168.1.90
 HTTPClient http;
 WiFiClient clienteWiFi;
 
@@ -52,8 +52,15 @@ void loop() {
   }*/
   promedioTemperatura /= 10;
   promedioHumedad /= 10;
-  // Armar la ruta del servicio
-  String url = String( urlBase + String(promedioTemperatura)+"&claveUsuario=1&modelo=DHT11");
+  enviarDatos("TemperaturaCorporal", promedioTemperatura,"1", "DHT11");
+  
+  delay(1000000); // Cada 10 segundos
+
+}
+
+//http://192.168.1.90/IoT/insertaMedicionFrecuenciaCardiaca.php?frecuenciaCardiaca=10&claveUsuario=1&modelo=MAX30102
+void enviarDatos(String tabla,float promedioMedicion ,String id, String modelo){
+  String url = String( urlBase + tabla+".php?"+decapitalize(tabla)+"="+String(promedioMedicion)+"&claveUsuario="+id+"&modelo="+modelo);
 
   Serial.println(url);
 
@@ -72,9 +79,10 @@ void loop() {
     Serial.println("No es posible hacer la conexión");
   }
   http.end();
-  delay(1000000); // Cada 10 segundos
-
 }
+
+
+
 
 void abrirSerial() {
   // Para la consola serial
@@ -96,4 +104,10 @@ void conectarARed() {
   
   // Ya se conectó, avisar
   Serial.println("\nConectado!");
+}
+
+String decapitalize(String palabra){
+  String final = String(palabra[0]);
+  final.toLowerCase();
+  return final+palabra.substring(1);
 }
