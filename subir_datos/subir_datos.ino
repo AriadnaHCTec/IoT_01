@@ -16,7 +16,7 @@ DHT dht(dht_dpin, DHTTYPE);
 #include <ESP8266HTTPClient.h>
 const char *red = "INFINITUMC99E";//Ari: INFINITUMC99E
 const char *password = "FEw3Cp4M2j";//Ari: FEw3Cp4M2j
-String urlBase = "http://192.168.1.90/grabar/insertaTemperatura.php?temperatura=";  // GET?
+String urlBase = "http://192.168.1.90/IoT/insertaTemperatura.php?temperatura=";  // GET?
 HTTPClient http;
 WiFiClient clienteWiFi;
 
@@ -36,18 +36,22 @@ void loop() {
   float humedades[100];
   float promedioTemperatura = 0;
   float promedioHumedad = 0;
-
-  for (int i = 1; i <= sizeof(temperaturas) - 1; i++){
+  Serial.println(sizeof(temperaturas));
+  for (int i = 1; i <= 99; i++){
     temperaturas[i] = dht.readTemperature();
     humedades[i] = dht.readHumidity();
+    if(i>89){
+      promedioTemperatura += temperaturas[i];
+    }
+    delay(10);
   }
-  for (int i = 89; i <= 99; i++){
+  /*for (int i = 89; i <= 99; i++){
     promedioTemperatura += temperaturas[i];
-    promedioHumedad += humedades[i];
-  }
+    //promedioHumedad += humedades[i];
+    delay(10);
+  }*/
   promedioTemperatura /= 10;
-  promedioHumedad /= 10;  
-
+  promedioHumedad /= 10;
   // Armar la ruta del servicio
   String url = String( urlBase + String(promedioTemperatura)+"&claveUsuario=1&modelo=DHT11");
 
@@ -68,7 +72,7 @@ void loop() {
     Serial.println("No es posible hacer la conexión");
   }
   http.end();
-  delay(10000); // Cada 10 segundos
+  delay(1000000); // Cada 10 segundos
 
 }
 

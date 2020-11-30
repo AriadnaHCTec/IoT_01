@@ -5,7 +5,7 @@
 		$claveUsuario = $_GET["claveUsuario"];
 		$modelo = $_GET["modelo"];
 
-		$sql_agregar = "INSERT INTO MedicionTemperaturaCorporal(temperatura, claveUsuario, modelo) VALUES (?,?,?,?,?,?,?,?)";
+		$sql_agregar = "INSERT INTO MedicionTemperaturaCorporal(temperatura, claveUsuario, modelo) VALUES (?,?,?)";
 		$sentencia_agregar = $pdo->prepare($sql_agregar);
 		$resultado = $sentencia_agregar->execute(array($temperatura, $claveUsuario, $modelo));
 				
