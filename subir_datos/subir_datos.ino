@@ -62,6 +62,7 @@ void setup() {
 }
 
 void loop(){
+  
   medicionTemperatura();
   medicionOximetriaFrecuenciaCardiaca();
  
