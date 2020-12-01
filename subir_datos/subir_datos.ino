@@ -35,7 +35,7 @@ String urlBase = "http://192.168.0.108/IoT/insertaMedicion";  // GET? Ari: 192.1
                                                              // La ip pública de Ari receptora es 189.225.66.113
 HTTPClient http;
 WiFiClient clienteWiFi;
-
+ 
 void setup() {
   // Para depurar por el puerto serial.
   abrirSerial();
@@ -67,9 +67,7 @@ void loop(){
   float promedioTemperatura = medicionTemperatura();
   
   enviarDatos("TemperaturaCorporal", promedioTemperatura,"1", "DHT11");
-  
-  delay(1000000); // Cada 10 segundos
-
+ 
   bufferLength = 100;
   //read the first 100 samples, and determine the signal range
   for (byte i = 0 ; i < bufferLength ; i++)
@@ -111,17 +109,19 @@ void loop(){
   }
   //After gathering 25 new samples recalculate HR and SP02
   maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
-  if (validSPO2){
-    enviarDatos("MedicionOximetria", spo2, "1", "MAX30102");
-  } 
-  if (validHeartRate){
-    enviarDatos("MedicionFrecuenciaCardiaca", heartRate, "1", "MAX30102");
-  }
+  Serial.println(String(validSPO2));
+  Serial.println(String(validHeartRate));
+  
+  enviarDatos("Oximetria", spo2, "1", "MAX30102");
+  
+  enviarDatos("FrecuenciaCardiaca", heartRate, "1", "MAX30102");
+  
   delay(100000);
 }
 
 //http://192.168.1.90/IoT/insertaMedicionFrecuenciaCardiaca.php?frecuenciaCardiaca=10&claveUsuario=1&modelo=MAX30102
 void enviarDatos(String tabla, float promedioMedicion, String id, String modelo){
+  // El argumento que representa tabla debe ir sin la palabra Medición.
   String url = String( urlBase + tabla + ".php?" + decapitalize(tabla) + "=" + String(promedioMedicion) + "&claveUsuario=" + id + "&modelo=" + modelo);
   Serial.println(url);
   // Enviarlos por la red al servicio
