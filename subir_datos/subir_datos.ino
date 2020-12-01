@@ -62,8 +62,7 @@ void setup() {
 }
 
 void loop(){
-  float promedioTemperatura = medicionTemperatura();
-  
+  medicionTemperatura();
   medicionOximetriaFrecuenciaCardiaca();
  
   delay(100000);
@@ -180,7 +179,7 @@ void medicionOximetriaFrecuenciaCardiaca(){
   maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
   Serial.println(String(validSPO2));
   Serial.println(String(validHeartRate));
-  enviarDatos("Oximetria", promedioOximetria, "1", "MAX30102");
-  enviarDatos("FrecuenciaCardiaca", promedioFrecuenciaCardiaca, "1", "MAX30102");
+  enviarDatos("Oximetria", spo2, "1", "MAX30102");
+  enviarDatos("FrecuenciaCardiaca", heartRate, "1", "MAX30102");
 }
   
