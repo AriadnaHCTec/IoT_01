@@ -48,11 +48,6 @@ void setup() {
     Serial.println(F("No se encontró el sensor de oximetría"));
     while(1); // Terminar.
   }
-  // Esperar indicación de usuario para comenzar a medir.
-  Serial.println("\nColoque su sensor de oximetría contra su dedo firmemente. Cuando este listo mande byte a puerto serial.\n");
-  while(Serial.available() == 0){
-    Serial.read();  
-  }
   // Setup de sensor.
   byte ledBrightness = 60; //Options: 0=Off to 255=50mA
   byte sampleAverage = 4; //Options: 1, 2, 4, 8, 16, 32
@@ -65,57 +60,15 @@ void setup() {
 
 void loop(){
   float promedioTemperatura = medicionTemperatura();
-  
   enviarDatos("TemperaturaCorporal", promedioTemperatura,"1", "DHT11");
+
+  int32_t oximetriaFrecuencia = medicionOximetriaFrecuenciaCardiaca();
+  int32_t promedioOximetria = oximetriaFrecuencuia[0];
+  int32_t promedioFrecuenciaCardiaca = oximetriaFrecuencia[1];
+  
+  enviarDatos("Oximetria", promedioOximetria, "1", "MAX30102");
+  enviarDatos("FrecuenciaCardiaca", promedioFrecuenciaCardiaca, "1", "MAX30102");
  
-  bufferLength = 100;
-  //read the first 100 samples, and determine the signal range
-  for (byte i = 0 ; i < bufferLength ; i++)
-  {
-    while (particleSensor.available() == false) //do we have new data?
-      particleSensor.check(); //Check the sensor for new data
-
-    redBuffer[i] = particleSensor.getRed();
-    irBuffer[i] = particleSensor.getIR();
-    particleSensor.nextSample(); //We're finished with this sample so move to next sample
-    Serial.print(F("red="));
-    Serial.print(redBuffer[i], DEC);
-    Serial.print(F(", ir="));
-    Serial.println(irBuffer[i], DEC);
-  }
-  maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
-  for (byte i = 25; i < 100; i++){
-    redBuffer[i - 25] = redBuffer[i];
-    irBuffer[i - 25] = irBuffer[i];
-  }
-  for (byte i = 75; i < 100; i++){
-    while (particleSensor.available() == false) //do we have new data?
-      particleSensor.check(); //Check the sensor for new data
-    redBuffer[i] = particleSensor.getRed();
-    irBuffer[i] = particleSensor.getIR();
-    particleSensor.nextSample(); //We're finished with this sample so move to next sample
-    Serial.print(F(", HR="));
-    Serial.print(heartRate, DEC);
-
-    Serial.print(F(", HRvalid="));
-    Serial.print(validHeartRate, DEC);
-
-    Serial.print(F(", SPO2="));
-    Serial.print(spo2, DEC);
-
-    Serial.print(F(", SPO2Valid="));
-    Serial.println(validSPO2, DEC);
-    //send samples and calculation result to terminal program through UART
-  }
-  //After gathering 25 new samples recalculate HR and SP02
-  maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
-  Serial.println(String(validSPO2));
-  Serial.println(String(validHeartRate));
-  
-  enviarDatos("Oximetria", spo2, "1", "MAX30102");
-  
-  enviarDatos("FrecuenciaCardiaca", heartRate, "1", "MAX30102");
-  
   delay(100000);
 }
 
@@ -180,3 +133,56 @@ float medicionTemperatura(){
   promedioTemperatura /= 10;
   return promedioTemperatura;
 }
+
+int32_t[2] medicionOximetriaFrecuenciaCardiaca(){
+  // Esperar indicación de usuario para comenzar a medir.
+  Serial.println("\nColoque su sensor de oximetría contra su dedo firmemente. Cuando este listo mande byte a puerto serial.\n");
+  while(Serial.available() == 0){
+    Serial.read();  
+  }
+  bufferLength = 100;
+  //read the first 100 samples, and determine the signal range
+  for (byte i = 0 ; i < bufferLength ; i++)
+  {
+    while (particleSensor.available() == false) //do we have new data?
+      particleSensor.check(); //Check the sensor for new data
+      
+    redBuffer[i] = particleSensor.getRed();
+    irBuffer[i] = particleSensor.getIR();
+    particleSensor.nextSample(); //We're finished with this sample so move to next sample
+    Serial.print(F("red="));
+    Serial.print(redBuffer[i], DEC);
+    Serial.print(F(", ir="));
+    Serial.println(irBuffer[i], DEC);
+  }
+  maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
+  for (byte i = 25; i < 100; i++){
+    redBuffer[i - 25] = redBuffer[i];
+    irBuffer[i - 25] = irBuffer[i];
+  }
+  for (byte i = 75; i < 100; i++){
+    while (particleSensor.available() == false) //do we have new data?
+      particleSensor.check(); //Check the sensor for new data
+    redBuffer[i] = particleSensor.getRed();
+    irBuffer[i] = particleSensor.getIR();
+    particleSensor.nextSample(); //We're finished with this sample so move to next sample
+    Serial.print(F(", HR="));
+    Serial.print(heartRate, DEC);
+
+    Serial.print(F(", HRvalid="));
+    Serial.print(validHeartRate, DEC);
+
+    Serial.print(F(", SPO2="));
+    Serial.print(spo2, DEC);
+
+    Serial.print(F(", SPO2Valid="));
+    Serial.println(validSPO2, DEC);
+    //send samples and calculation result to terminal program through UART
+  }
+  //After gathering 25 new samples recalculate HR and SP02
+  maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
+  Serial.println(String(validSPO2));
+  Serial.println(String(validHeartRate));
+  int32_t[2] mediciones = {spo2, heartRate};
+  return mediciones;
+  
