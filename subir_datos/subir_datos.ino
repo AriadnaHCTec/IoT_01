@@ -62,10 +62,11 @@ void setup() {
 }
 
 void loop(){
-  
+  bool usuarioNuevo = pregunta("Hola buen usuario, es nuevo?");
+  delay(20000000);
   medicionTemperatura();
   medicionOximetriaFrecuenciaCardiaca();
- 
+  
   delay(100000);
 }
 
@@ -191,15 +192,16 @@ bool pregunta(String textoPregunta){
  byte boton1 = false;
  byte boton2 = false;
  Serial.println(textoPregunta);
+ delay(5000);
  while(true){
   boton1 = digitalRead(D5);
   boton2 = digitalRead(D6);
   if (boton1 && not boton2){
-    Serial.println("si");
+    Serial.println("Ha respondido sí.");
     delay(2000);
     return true;
   }else if (not boton1 && boton2){
-    Serial.println("Respondio no");
+    Serial.println("Ha respondido no.");
     delay(2000);
     return true;
   }else{
