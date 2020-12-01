@@ -10,8 +10,8 @@ Programa para subir mediciones a la base de datos en sql.
 #include "MAX30105.h"
 #include "spo2_algorithm.h"
 MAX30105 particleSensor; // Instancia de sensor.
-uint_32_t irBuffer[100]; // Para guardar del sensor infrarrojo.
-uint_32_t redBuffer[100]; // Guardar información del sensor rojo.
+uint32_t irBuffer[100]; // Para guardar del sensor infrarrojo.
+uint32_t redBuffer[100]; // Guardar información del sensor rojo.
 int32_t bufferLength; //data length
 int32_t spo2; //SPO2 value
 int8_t validSPO2; //indicator to show if the SPO2 calculation is valid
@@ -172,7 +172,6 @@ float medicionTemperatura(){
   float promedioTemperatura = 0;
   for (int i = 1; i <= 99; i++){
     temperaturas[i] = dht.readTemperature();
-    humedades[i] = dht.readHumidity();
     if(i>89){
       promedioTemperatura += temperaturas[i];
     }
