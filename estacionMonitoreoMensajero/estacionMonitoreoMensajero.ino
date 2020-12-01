@@ -1,7 +1,11 @@
 /*
-Programa para subir mediciones a la base de datos en sql.
 
+Programa principal de interacción entre usuario y estación mensajera para guardar mediciones en base de datos relacional de sql.
 
+Por Luis Ignacio Ferro Salinas A01378248
+    Ari
+
+Última modificación: 1 de diciembre de 2020
 
 */
 
@@ -62,16 +66,37 @@ void setup() {
 }
 
 void loop(){
+  String claveUsuario;
+
+  Serial.println("\nBienvenido usuario\n");
   bool usuarioNuevo = pregunta("Hola buen usuario, es nuevo?");
-  medicionTemperatura();
-  medicionOximetriaFrecuenciaCardiaca();
+  
+  if (usuarioNuevo){
+    // query para obtener clave de nuevo usuario
+  } else{
+      Serial.println("\nEscriba su número de usuario en el puerto serial.\n");
+      while(Serial.available() == 0){
+        claveUsuario = String(Serial.read());  
+      }
+  }
+  // Hacer y enviar las medidas que el usuario quiera.
+  bool quiereMedirTemperatura = pregunta("¿Quiere medir su temperatura?");
+  if (quiereMedirTemperatura){
+    medicionTemperatura(claveUsuario);
+  }
+
+  bool quiereMedirOximetriaFrecuencia = pregunta("¿Quiere medir su oximetría y frecuencia cardíaca?");
+  if (quiereMedirOximetriaFrecuencia){
+    medicionOximetriaFrecuenciaCardiaca(claveUsuario);
+  }
+    
   delay(100000);
 }
 
 //http://192.168.1.90/IoT/insertaMedicionFrecuenciaCardiaca.php?frecuenciaCardiaca=10&claveUsuario=1&modelo=MAX30102
-void enviarDatos(String tabla, float promedioMedicion, String id, String modelo){
+void enviarDatos(String tabla, float promedioMedicion, String claveUsuario, String modelo){
   // El argumento que representa tabla debe ir sin la palabra Medición.
-  String url = String( urlBase + tabla + ".php?" + decapitalize(tabla) + "=" + String(promedioMedicion) + "&claveUsuario=" + id + "&modelo=" + modelo);
+  String url = String( urlBase + tabla + ".php?" + decapitalize(tabla) + "=" + String(promedioMedicion) + "&claveUsuario=" + claveUsuario + "&modelo=" + modelo);
   Serial.println(url);
   // Enviarlos por la red al servicio
   // Solicitar la conexión al servicio
@@ -116,7 +141,7 @@ String decapitalize(String palabra){
   return final+palabra.substring(1);
 }
 
-void medicionTemperatura(){
+void medicionTemperatura(String claveUsuario){
   // Lectura de temperatura y humedad.
   float temperaturas[100];
   float promedioTemperatura = 0;
@@ -127,10 +152,10 @@ void medicionTemperatura(){
     }
   }
   promedioTemperatura /= 10;
-  enviarDatos("TemperaturaCorporal", promedioTemperatura,"1", "DHT11");
+  enviarDatos("TemperaturaCorporal", promedioTemperatura, claveUsuario, "DHT11");
 }
 
-void medicionOximetriaFrecuenciaCardiaca(){
+void medicionOximetriaFrecuenciaCardiaca(String claveUsuario){
   // Esperar indicación de usuario para comenzar a medir.
   Serial.println("\nColoque su sensor de oximetría contra su dedo firmemente. Cuando este listo mande byte a puerto serial.\n");
   while(Serial.available() == 0){
@@ -179,14 +204,15 @@ void medicionOximetriaFrecuenciaCardiaca(){
   maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
   Serial.println(String(validSPO2));
   Serial.println(String(validHeartRate));
-  enviarDatos("Oximetria", spo2, "1", "MAX30102");
-  enviarDatos("FrecuenciaCardiaca", heartRate, "1", "MAX30102");
+  enviarDatos("Oximetria", spo2, claveUsuario, "MAX30102");
+  enviarDatos("FrecuenciaCardiaca", heartRate, claveUsuario, "MAX30102");
 }
 
 bool pregunta(String textoPregunta){
   /* textoPregunta string de máximo 32 caracteres.
    *  boton 1 y 2 - son referencias a los botones 
    *  */
+ bool esperando = false;
  byte boton1 = false;
  byte boton2 = false;
  Serial.println(textoPregunta);
@@ -201,9 +227,11 @@ bool pregunta(String textoPregunta){
   }else if (not boton1 && boton2){
     Serial.println("Ha respondido no.");
     delay(2000);
-    return true;
+    return false;
   }else{
-    Serial.println("Esperando...");
+    if (!esperando){
+      Serial.println("Esperando...");
+    }
   } 
   delay(10); //Para solucionar error de reset
  }
