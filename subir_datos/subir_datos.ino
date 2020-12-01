@@ -32,7 +32,7 @@ const char *red = "INFINITUMC99E";//Ari: INFINITUMC99E
 const char *password = "FEw3Cp4M2j";//Ari: FEw3Cp4M2j
 String urlBase = "http://192.168.1.90/IoT/insertaMedicion";  // GET? Ari: 192.168.1.90
                                                              // Ip interna de compu Luis Ferro: 192.
-                                                              // La ip pública de Ari receptora es 189.225.66.113
+                                                             // La ip pública de Ari receptora es 189.225.66.113
 HTTPClient http;
 WiFiClient clienteWiFi;
 
@@ -61,36 +61,62 @@ void setup() {
   int pulseWidth = 411; //Options: 69, 118, 215, 411
   int adcRange = 4096; //Options: 2048, 4096, 8192, 16384  
   particleSensor.setup(ledBrightness, sampleAverage, ledMode, sampleRate, pulseWidth, adcRange); //Configure sensor with these settings
-
 }
 
-void loop() {
-  // Lectura de temperatura y humedad.
-
-  float temperaturas[100];
-  float humedades[100];
-  float promedioTemperatura = 0;
-  float promedioHumedad = 0;
-  Serial.println(sizeof(temperaturas));
-  for (int i = 1; i <= 99; i++){
-    temperaturas[i] = dht.readTemperature();
-    humedades[i] = dht.readHumidity();
-    if(i>89){
-      promedioTemperatura += temperaturas[i];
-    }
-    delay(10);
-  }
-  /*for (int i = 89; i <= 99; i++){
-    promedioTemperatura += temperaturas[i];
-    //promedioHumedad += humedades[i];
-    delay(10);
-  }*/
-  promedioTemperatura /= 10;
-  promedioHumedad /= 10;
+void loop(){
+  float promedioTemperatura = medicionTemperatura();
+  
   enviarDatos("TemperaturaCorporal", promedioTemperatura,"1", "DHT11");
   
   delay(1000000); // Cada 10 segundos
 
+  bufferLength = 100;
+  //read the first 100 samples, and determine the signal range
+  for (byte i = 0 ; i < bufferLength ; i++)
+  {
+    while (particleSensor.available() == false) //do we have new data?
+      particleSensor.check(); //Check the sensor for new data
+
+    redBuffer[i] = particleSensor.getRed();
+    irBuffer[i] = particleSensor.getIR();
+    particleSensor.nextSample(); //We're finished with this sample so move to next sample
+    Serial.print(F("red="));
+    Serial.print(redBuffer[i], DEC);
+    Serial.print(F(", ir="));
+    Serial.println(irBuffer[i], DEC);
+  }
+  maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
+  for (byte i = 25; i < 100; i++){
+    redBuffer[i - 25] = redBuffer[i];
+    irBuffer[i - 25] = irBuffer[i];
+  }
+  for (byte i = 75; i < 100; i++){
+    while (particleSensor.available() == false) //do we have new data?
+      particleSensor.check(); //Check the sensor for new data
+    redBuffer[i] = particleSensor.getRed();
+    irBuffer[i] = particleSensor.getIR();
+    particleSensor.nextSample(); //We're finished with this sample so move to next sample
+    Serial.print(F(", HR="));
+    Serial.print(heartRate, DEC);
+
+    Serial.print(F(", HRvalid="));
+    Serial.print(validHeartRate, DEC);
+
+    Serial.print(F(", SPO2="));
+    Serial.print(spo2, DEC);
+
+    Serial.print(F(", SPO2Valid="));
+    Serial.println(validSPO2, DEC);
+    //send samples and calculation result to terminal program through UART
+  }
+  //After gathering 25 new samples recalculate HR and SP02
+  maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
+  if (validSPO2){
+    enviarDatos("MedicionOximetria", spo2, "1", "MAX30102");
+  } 
+  if (validHeartRate){
+    enviarDatos("MedicionFrecuenciaCardiaca", heartRate, "1", "MAX30102");
+  }
 }
 
 //http://192.168.1.90/IoT/insertaMedicionFrecuenciaCardiaca.php?frecuenciaCardiaca=10&claveUsuario=1&modelo=MAX30102
@@ -138,4 +164,19 @@ String decapitalize(String palabra){
   String final = String(palabra[0]);
   final.toLowerCase();
   return final+palabra.substring(1);
+}
+
+float medicionTemperatura(){
+  // Lectura de temperatura y humedad.
+  float temperaturas[100];
+  float promedioTemperatura = 0;
+  for (int i = 1; i <= 99; i++){
+    temperaturas[i] = dht.readTemperature();
+    humedades[i] = dht.readHumidity();
+    if(i>89){
+      promedioTemperatura += temperaturas[i];
+    }
+  }
+  promedioTemperatura /= 10;
+  return promedioTemperatura;
 }
