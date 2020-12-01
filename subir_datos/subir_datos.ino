@@ -56,18 +56,15 @@ void setup() {
   int pulseWidth = 411; //Options: 69, 118, 215, 411
   int adcRange = 4096; //Options: 2048, 4096, 8192, 16384  
   particleSensor.setup(ledBrightness, sampleAverage, ledMode, sampleRate, pulseWidth, adcRange); //Configure sensor with these settings
+
+  pinMode(D5, INPUT);
+  pinMode(D6, INPUT);
 }
 
 void loop(){
   float promedioTemperatura = medicionTemperatura();
-  enviarDatos("TemperaturaCorporal", promedioTemperatura,"1", "DHT11");
-
-  int32_t oximetriaFrecuencia = medicionOximetriaFrecuenciaCardiaca();
-  int32_t promedioOximetria = oximetriaFrecuencuia[0];
-  int32_t promedioFrecuenciaCardiaca = oximetriaFrecuencia[1];
   
-  enviarDatos("Oximetria", promedioOximetria, "1", "MAX30102");
-  enviarDatos("FrecuenciaCardiaca", promedioFrecuenciaCardiaca, "1", "MAX30102");
+  medicionOximetriaFrecuenciaCardiaca();
  
   delay(100000);
 }
@@ -120,7 +117,7 @@ String decapitalize(String palabra){
   return final+palabra.substring(1);
 }
 
-float medicionTemperatura(){
+void medicionTemperatura(){
   // Lectura de temperatura y humedad.
   float temperaturas[100];
   float promedioTemperatura = 0;
@@ -131,10 +128,10 @@ float medicionTemperatura(){
     }
   }
   promedioTemperatura /= 10;
-  return promedioTemperatura;
+  enviarDatos("TemperaturaCorporal", promedioTemperatura,"1", "DHT11");
 }
 
-int32_t[2] medicionOximetriaFrecuenciaCardiaca(){
+void medicionOximetriaFrecuenciaCardiaca(){
   // Esperar indicación de usuario para comenzar a medir.
   Serial.println("\nColoque su sensor de oximetría contra su dedo firmemente. Cuando este listo mande byte a puerto serial.\n");
   while(Serial.available() == 0){
@@ -183,6 +180,7 @@ int32_t[2] medicionOximetriaFrecuenciaCardiaca(){
   maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
   Serial.println(String(validSPO2));
   Serial.println(String(validHeartRate));
-  int32_t[2] mediciones = {spo2, heartRate};
-  return mediciones;
+  enviarDatos("Oximetria", promedioOximetria, "1", "MAX30102");
+  enviarDatos("FrecuenciaCardiaca", promedioFrecuenciaCardiaca, "1", "MAX30102");
+}
   
