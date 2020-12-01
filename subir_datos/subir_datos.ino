@@ -183,4 +183,31 @@ void medicionOximetriaFrecuenciaCardiaca(){
   enviarDatos("Oximetria", spo2, "1", "MAX30102");
   enviarDatos("FrecuenciaCardiaca", heartRate, "1", "MAX30102");
 }
+
+bool pregunta(String textoPregunta){
+  /* textoPregunta string de máximo 32 caracteres.
+   *  boton 1 y 2 - son referencias a los botones 
+   *  */
+ byte boton1 = false;
+ byte boton2 = false;
+ Serial.println(textoPregunta);
+ while(true){
+  boton1 = digitalRead(D5);
+  boton2 = digitalRead(D6);
+  if (boton1 && not boton2){
+    Serial.println("si");
+    delay(2000);
+    return true;
+  }else if (not boton1 && boton2){
+    Serial.println("Respondio no");
+    delay(2000);
+    return true;
+  }else{
+    Serial.println("Esperando...");
+  } 
+  delay(10); //Para solucionar error de reset
+ }
+}
+
+
   
