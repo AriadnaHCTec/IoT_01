@@ -63,10 +63,8 @@ void setup() {
 
 void loop(){
   bool usuarioNuevo = pregunta("Hola buen usuario, es nuevo?");
-  delay(20000000);
   medicionTemperatura();
   medicionOximetriaFrecuenciaCardiaca();
-  
   delay(100000);
 }
 
