@@ -27,11 +27,11 @@ DHT dht(dht_dpin, DHTTYPE);
 //Internet
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-const char *red = "INFINITUMC99E";//Ari: INFINITUMC99E  
+const char *red = "FerSal";//Ari: INFINITUMC99E  
                                    // Red Luis Ferro: FerSal
-const char *password = "FEw3Cp4M2j";//Ari: FEw3Cp4M2j
-String urlBase = "http://192.168.1.90/IoT/insertaMedicion";  // GET? Ari: 192.168.1.90
-                                                             // Ip interna de compu Luis Ferro: 192.
+const char *password = "0037605980";//Ari: FEw3Cp4M2j
+String urlBase = "http://192.168.0.108/IoT/insertaMedicion";  // GET? Ari: 192.168.1.90
+                                                             // Ip interna de compu Luis Ferro: 192.168.0.108
                                                              // La ip pública de Ari receptora es 189.225.66.113
 HTTPClient http;
 WiFiClient clienteWiFi;
@@ -117,6 +117,7 @@ void loop(){
   if (validHeartRate){
     enviarDatos("MedicionFrecuenciaCardiaca", heartRate, "1", "MAX30102");
   }
+  delay(100000);
 }
 
 //http://192.168.1.90/IoT/insertaMedicionFrecuenciaCardiaca.php?frecuenciaCardiaca=10&claveUsuario=1&modelo=MAX30102
