@@ -34,7 +34,7 @@ DHT dht(dht_dpin, DHTTYPE);
 const char *red = "FerSal";//Ari: INFINITUMC99E  
                                    // Red Luis Ferro: FerSal
 const char *password = "0037605980";//Ari: FEw3Cp4M2j
-String urlBase = "http://192.168.0.108/IoT/insertaMedicion";  // GET? Ari: 192.168.1.90
+String urlBase = "http://192.168.0.108/IoT";  // GET? Ari: 192.168.1.90
                                                              // Ip interna de compu Luis Ferro: 192.168.0.108
                                                              // La ip pública de Ari receptora es 189.225.66.113
 HTTPClient http;
@@ -73,12 +73,17 @@ void loop(){
   
   if (usuarioNuevo){
     // query para obtener clave de nuevo usuario
+    claveUsuario = obtenerClaveMaximaUsuario();
+    int claveUsuarioInt = claveUsuario.toInt();
+    claveUsuarioInt++;
+    claveUsuario = String(claveUsuarioInt);
   } else{
       Serial.println("\nEscriba su número de usuario en el puerto serial.\n");
       while(Serial.available() == 0){
         claveUsuario = String(Serial.read());  
       }
   }
+  
   // Hacer y enviar las medidas que el usuario quiera.
   bool quiereMedirTemperatura = pregunta("¿Quiere medir su temperatura?");
   if (quiereMedirTemperatura){
@@ -89,14 +94,37 @@ void loop(){
   if (quiereMedirOximetriaFrecuencia){
     medicionOximetriaFrecuenciaCardiaca(claveUsuario);
   }
-    
+  
   delay(100000);
 }
+
+String obtenerClaveMaximaUsuario(){
+  // El argumento que representa tabla debe ir sin la palabra Medición.
+  String url = String(urlBase + "/consultaClaveMaxima.php";
+  Serial.println(url);
+  // Enviarlos por la red al servicio
+  // Solicitar la conexión al servicio
+  if ( http.begin(clienteWiFi, url) ){ 
+    int codigo = http.GET();  // Realizar petición
+    Serial.printf("Código: %d\n", codigo);
+      if (codigo == HTTP_CODE_OK || codigo == HTTP_CODE_MOVED_PERMANENTLY){
+        String claveUsuario = http.getString();  // Respuesta
+        Serial.println(claveUsuario);
+        return claveUsuario;
+      } else{
+      Serial.printf("GET falló, error: %s\n", http.errorToString(codigo).c_str());
+    }
+  } else{
+    Serial.println("No es posible hacer la conexión");
+  }
+  http.end();
+}
+
 
 //http://192.168.1.90/IoT/insertaMedicionFrecuenciaCardiaca.php?frecuenciaCardiaca=10&claveUsuario=1&modelo=MAX30102
 void enviarDatos(String tabla, float promedioMedicion, String claveUsuario, String modelo){
   // El argumento que representa tabla debe ir sin la palabra Medición.
-  String url = String( urlBase + tabla + ".php?" + decapitalize(tabla) + "=" + String(promedioMedicion) + "&claveUsuario=" + claveUsuario + "&modelo=" + modelo);
+  String url = String( urlBase + "/insertaMedicion" + tabla + ".php?" + decapitalize(tabla) + "=" + String(promedioMedicion) + "&claveUsuario=" + claveUsuario + "&modelo=" + modelo);
   Serial.println(url);
   // Enviarlos por la red al servicio
   // Solicitar la conexión al servicio
