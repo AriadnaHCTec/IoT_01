@@ -82,6 +82,9 @@ void loop(){
       while(Serial.available() == 0){
         claveUsuario = String(Serial.read());  
       }
+      Serial.println("\nSu clave de usuario será ");
+      Serial.println(claveUsuario);
+      delay(1000);
   }
   
   // Hacer y enviar las medidas que el usuario quiera.
@@ -100,7 +103,7 @@ void loop(){
 
 String obtenerClaveMaximaUsuario(){
   // El argumento que representa tabla debe ir sin la palabra Medición.
-  String url = String(urlBase + "/consultaClaveMaxima.php";
+  String url = String(urlBase + "/consultaClaveMaxima.php");
   Serial.println(url);
   // Enviarlos por la red al servicio
   // Solicitar la conexión al servicio
@@ -258,7 +261,10 @@ bool pregunta(String textoPregunta){
     return false;
   }else{
     if (!esperando){
-      Serial.println("Esperando...");
+      Serial.println("Esperando");
+      esperando = false;
+    } else{
+      Serial.println(".");
     }
   } 
   delay(10); //Para solucionar error de reset

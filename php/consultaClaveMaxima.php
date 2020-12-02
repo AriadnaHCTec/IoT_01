@@ -1,14 +1,12 @@
 <?php
     include "conexion.php";
-
-    $sql_obtener_usuario = "SELECT claveOximetria FROM MedicionOximetria";
+    $sql_obtener_usuario = "SELECT claveUsuario FROM Usuario";
     $sentencia_query = $pdo -> prepare($sql_obtener_usuario);
     $resultado = $sentencia_query -> execute();
 
     if ($resultado){
-        echo "\nSe ha hecho la consulta del usuario más nuevo\n";
         while ($row = $sentencia_query -> fetch()){
-            echo $row['claveOximetria'];
+            echo $row['claveUsuario'];
         }
         $sentencia_query = null;
         $pdo = null;
