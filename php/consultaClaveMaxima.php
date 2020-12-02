@@ -1,6 +1,6 @@
 <?php
     include "conexion.php";
-    $sql_obtener_usuario = "SELECT claveUsuario FROM Usuario";
+    $sql_obtener_usuario = "SELECT MAX(claveUsuario) FROM Usuario";
     $sentencia_query = $pdo -> prepare($sql_obtener_usuario);
     $resultado = $sentencia_query -> execute();
 

@@ -77,12 +77,16 @@ void loop(){
     int claveUsuarioInt = claveUsuario.toInt();
     claveUsuarioInt++;
     claveUsuario = String(claveUsuarioInt);
+    Serial.println("\Su clave de usuario será: ");
+    Serial.println(claveUsuario);
+    Serial.println("\nNo la oblvide\n");
+    delay(1000000);
   } else{
       Serial.println("\nEscriba su número de usuario en el puerto serial.\n");
       while(Serial.available() == 0){
         claveUsuario = String(Serial.read());  
       }
-      Serial.println("\nSu clave de usuario será ");
+      Serial.println("\nHa confirmado que su número de usuario es ");
       Serial.println(claveUsuario);
       delay(1000);
   }
@@ -262,7 +266,7 @@ bool pregunta(String textoPregunta){
   }else{
     if (!esperando){
       Serial.println("Esperando");
-      esperando = false;
+      esperando = true;
     } else{
       Serial.println(".");
     }
