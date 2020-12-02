@@ -34,7 +34,7 @@ DHT dht(dht_dpin, DHTTYPE);
 const char *red = "FerSal";//Ari: INFINITUMC99E  
                                    // Red Luis Ferro: FerSal
 const char *password = "0037605980";//Ari: FEw3Cp4M2j
-String urlBase = "http://189.225.127.57/IoT";  // GET? Ari: 192.168.1.90
+String urlBase = "http://192.168.0.108/IoT";  // GET? Ari: 192.168.1.90
                                                              // Ip interna de compu Luis Ferro: 192.168.0.108
                                                              // La ip pública de Ari receptora es 189.225.66.113
 HTTPClient http;
@@ -89,6 +89,7 @@ void loop(){
           break;
         }
       }
+      claveUsuario.replace("\n", "");
       Serial.println("\nHa confirmado que su número de usuario es ");
       Serial.println(claveUsuario);
       delay(1000);
@@ -104,7 +105,6 @@ void loop(){
   if (quiereMedirOximetriaFrecuencia){
     medicionOximetriaFrecuenciaCardiaca(claveUsuario);
   }
-  
   delay(100000);
 }
 
