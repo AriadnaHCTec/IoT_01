@@ -34,7 +34,7 @@ DHT dht(dht_dpin, DHTTYPE);
 const char *red = "FerSal";//Ari: INFINITUMC99E  
                                    // Red Luis Ferro: FerSal
 const char *password = "0037605980";//Ari: FEw3Cp4M2j
-String urlBase = "http://192.168.0.108/IoT";  // GET? Ari: 192.168.1.90
+String urlBase = "http://189.225.127.57/IoT";  // GET? Ari: 192.168.1.90
                                                              // Ip interna de compu Luis Ferro: 192.168.0.108
                                                              // La ip pública de Ari receptora es 189.225.66.113
 HTTPClient http;
@@ -79,12 +79,15 @@ void loop(){
     claveUsuario = String(claveUsuarioInt);
     Serial.println("\Su clave de usuario será: ");
     Serial.println(claveUsuario);
-    Serial.println("\nNo la oblvide\n");
-    delay(1000000);
+    Serial.println("\nNo la olvide\n");
+    delay(5000);
   } else{
       Serial.println("\nEscriba su número de usuario en el puerto serial.\n");
-      while(Serial.available() == 0){
-        claveUsuario = String(Serial.read());  
+      while (1){
+        if (Serial.available() > 0){
+          claveUsuario = Serial.readString();
+          break;
+        }
       }
       Serial.println("\nHa confirmado que su número de usuario es ");
       Serial.println(claveUsuario);
@@ -268,7 +271,7 @@ bool pregunta(String textoPregunta){
       Serial.println("Esperando");
       esperando = true;
     } else{
-      Serial.println(".");
+      Serial.print(".");
     }
   } 
   delay(10); //Para solucionar error de reset

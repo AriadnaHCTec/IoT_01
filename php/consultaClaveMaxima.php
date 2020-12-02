@@ -1,12 +1,12 @@
 <?php
     include "conexion.php";
-    $sql_obtener_usuario = "SELECT MAX(claveUsuario) FROM Usuario";
+    $sql_obtener_usuario = "SELECT MAX(claveUsuario) AS claveMaxima FROM Usuario";
     $sentencia_query = $pdo -> prepare($sql_obtener_usuario);
     $resultado = $sentencia_query -> execute();
 
     if ($resultado){
         while ($row = $sentencia_query -> fetch()){
-            echo $row['claveUsuario'];
+            echo $row['claveMaxima'];
         }
         $sentencia_query = null;
         $pdo = null;
