@@ -14,5 +14,4 @@
         echo "Error al hacer consulta";
         echo $resultado;
     }
-
 ?>
