@@ -195,7 +195,7 @@ String obtenerClaveUsuario(){
     Serial.println("\nNo la olvide\n");
     imprimePantalla("No la olvide");
     delay(5000);
-    Serial.println("Por favor diríjase a la liga: y registre sus datos en el formulario. Cuando esté listo, envíe algo por el puerto serial.");
+    Serial.println("Por favor diríjase a la liga: 189.225.127.57/IoT/insertaUsuario.php y registre sus datos en el formulario. Cuando esté listo, envíe algo por el puerto serial.");
     imprimePantalla("LLene formulario");
     while (Serial.available() == 0){
       Serial.read();      
