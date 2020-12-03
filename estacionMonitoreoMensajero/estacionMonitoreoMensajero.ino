@@ -123,6 +123,12 @@ void loop(){
   delay(100000);
 }
 
+void flush_serial(){
+  while(Serial.available() > 0){
+    Serial.read();
+  }  
+}
+
 void callback(char* topic, byte* payload, unsigned int length){
   char *cstring = (char *) payload;
   cstring[length] = '\0';    // Agrega un caracter de terminación
@@ -195,7 +201,7 @@ String obtenerClaveUsuario(){
     Serial.println("\nNo la olvide\n");
     imprimePantalla("No la olvide");
     delay(5000);
-    Serial.println("Por favor diríjase a la liga: 189.225.127.57/IoT/insertaUsuario.php y registre sus datos en el formulario. Cuando esté listo, envíe algo por el puerto serial.");
+    Serial.println("Por favor diríjase a la liga: 189.225.127.57/IoT/insertaUsuario.html y registre sus datos en el formulario. Cuando esté listo, envíe algo por el puerto serial.");
     imprimePantalla("LLene formulario");
     while (Serial.available() == 0){
       Serial.read();      
@@ -302,6 +308,7 @@ void medicionTemperatura(String claveUsuario, bool mqtt){
   float promedioTemperatura = 0;
   Serial.println("\n Mande señal al puerto serial cuando este listo");
   imprimePantalla("mande señal cuando este listo");
+  flush_serial();
   while (Serial.available() == 0){
       Serial.read();
   }
@@ -326,6 +333,7 @@ void medicionTemperatura(String claveUsuario, bool mqtt){
 void medicionOximetriaFrecuenciaCardiaca(String claveUsuario, bool mqtt){
   // Esperar indicación de usuario para comenzar a medir.
   Serial.println("\nColoque su sensor de oximetría contra su dedo firmemente. Cuando este listo mande byte a puerto serial.\n");
+  flush_serial();
   imprimePantalla("mande señal cuando este listo");
   while(Serial.available() == 0){
     Serial.read();  
