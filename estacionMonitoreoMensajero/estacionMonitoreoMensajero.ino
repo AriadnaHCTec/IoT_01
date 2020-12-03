@@ -9,6 +9,9 @@ Por Luis Ignacio Ferro Salinas A01378248
 
 */
 
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
 // Preprocesamiento de oximetría
 #include <Wire.h>
 #include "MAX30105.h"
@@ -66,11 +69,36 @@ void setup() {
 }
 
 void loop(){
-  String claveUsuario;
 
-  Serial.println("\nBienvenido usuario\n");
-  bool usuarioNuevo = pregunta("Hola buen usuario, es nuevo?");
+  Serial.println("\nBienvenido usuario a la estación de monitoreo receptora Monitoreo es salud\n");
+  imprimePantalla("Bienvenido");
+  delay(5000);
+
+  String claveUsuario = obtenerClaveUsuario();
   
+  // Hacer y enviar las medidas que el usuario quiera.
+  bool quiereMedirTemperatura = pregunta("¿Quiere medir su temperatura?");
+  if (quiereMedirTemperatura){
+    medicionTemperatura(claveUsuario);
+  }
+
+  bool quiereMedirOximetriaFrecuencia = pregunta("¿Quiere medir su oximetría y frecuencia cardíaca?");
+  if (quiereMedirOximetriaFrecuencia){
+    medicionOximetriaFrecuenciaCardiaca(claveUsuario);
+  }
+  
+  // última opción enviar medidas en tiempo real a mqtt.
+  delay(100000);
+}
+
+void imprimePantalla(String texto){
+  // texto menor a 16 caracteres.
+  lcd.clear();
+  lcd.print(texto);
+}
+
+String obtenerClaveUsuario(){
+  bool usuarioNuevo = pregunta("Hola buen usuario, es nuevo?");
   if (usuarioNuevo){
     // query para obtener clave de nuevo usuario
     claveUsuario = obtenerClaveMaximaUsuario();
@@ -80,6 +108,11 @@ void loop(){
     Serial.println("\Su clave de usuario será: ");
     Serial.println(claveUsuario);
     Serial.println("\nNo la olvide\n");
+    delay(5000);
+    Serial.println("Por favor diríjase a la liga: y registre sus datos en el formulario. Cuando esté listo, envíe algo por el puerto serial.");
+    while (Serial.available){
+      Serial.read();      
+    }
     delay(5000);
   } else{
       Serial.println("\nEscriba su número de usuario en el puerto serial.\n");
@@ -92,24 +125,12 @@ void loop(){
       claveUsuario.replace("\n", "");
       Serial.println("\nHa confirmado que su número de usuario es ");
       Serial.println(claveUsuario);
-      delay(1000);
+      delay(5000);
   }
-  
-  // Hacer y enviar las medidas que el usuario quiera.
-  bool quiereMedirTemperatura = pregunta("¿Quiere medir su temperatura?");
-  if (quiereMedirTemperatura){
-    medicionTemperatura(claveUsuario);
-  }
-
-  bool quiereMedirOximetriaFrecuencia = pregunta("¿Quiere medir su oximetría y frecuencia cardíaca?");
-  if (quiereMedirOximetriaFrecuencia){
-    medicionOximetriaFrecuenciaCardiaca(claveUsuario);
-  }
-  delay(100000);
 }
 
+
 String obtenerClaveMaximaUsuario(){
-  // El argumento que representa tabla debe ir sin la palabra Medición.
   String url = String(urlBase + "/consultaClaveMaxima.php");
   Serial.println(url);
   // Enviarlos por la red al servicio
@@ -259,12 +280,12 @@ bool pregunta(String textoPregunta){
   boton1 = digitalRead(D5);
   boton2 = digitalRead(D6);
   if (boton1 && not boton2){
-    Serial.println("Ha respondido sí.");
-    delay(2000);
+    Serial.println("\nHa respondido sí.");
+    delay(5000);
     return true;
   }else if (not boton1 && boton2){
     Serial.println("Ha respondido no.");
-    delay(2000);
+    delay(5000);
     return false;
   }else{
     if (!esperando){
