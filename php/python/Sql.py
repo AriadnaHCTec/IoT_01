@@ -11,9 +11,11 @@ def medicionGeneral(mydb,tabla,medicion,ide):
     x = []
     y = []
     for i in myresult:
-      t = (datetime.datetime.min + i[2]).time()
-      x.append(datetime.datetime.combine(i[1], 
-                              t))
+      #t = (datetime.datetime.min + i[2]).time()
+      #print(type(t))
+      #x.append(datetime.datetime.combine(i[1], 
+       #                       t))
+      x.append(i[1])
       y.append(i[3])
     
     x = np.array(x)
@@ -27,17 +29,16 @@ def medicionGeneral(mydb,tabla,medicion,ide):
     
     fig, ax = plt.subplots()
     fig.autofmt_xdate()
-    ax.plot(x, y1)
-    plt.plot(x, y, 'o-', label = "tu medida")
+    plt.plot(x, y)
     plt.plot(x,y1)
     plt.plot(x,y2)
+    plt.legend(["Tu medida","Mínimo","Máximo"])
     #plt.scatter(x,y)
     
     """plt.legend("Mínimo")
     plt.legend("Máximo")"""
     plt.xlabel("Fecha")
-    plt.title(tabla)
-    plt.legend(["Tu medida","Mínimo","Máximo"])
+    plt.title(tabla)    
     
     if(medicion == "temperatura"):
         plt.ylabel("°C")
