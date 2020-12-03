@@ -3,11 +3,14 @@
 Programa principal de interacción entre usuario y estación mensajera para guardar mediciones en base de datos relacional de sql.
 
 Por Luis Ignacio Ferro Salinas A01378248
-    Ari
+    Ariadna Huesca Coronado A01749161
 
 Última modificación: 1 de diciembre de 2020
 
 */
+
+
+
 // Preprocesamiento de pantalla lcd.
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -37,12 +40,23 @@ DHT dht(dht_dpin, DHTTYPE);
 const char *red = "FerSal";//Ari: INFINITUMC99E  
                                    // Red Luis Ferro: FerSal
 const char *password = "0037605980";//Ari: FEw3Cp4M2j
-String urlBase = "http://192.168.0.108/IoT";  // GET? Ari: 192.168.1.90
+String urlBase = "http://189.225.127.57/IoT";  // GET? Ari: 192.168.1.90
                                                              // Ip interna de compu Luis Ferro: 192.168.0.108
-                                                             // La ip pública de Ari receptora es 189.225.66.113
+                                                             // La ip pública de Ari receptora es 189.225.127.57
 HTTPClient http;
 WiFiClient clienteWiFi;
- 
+
+
+// Preprocesamiento de mqtt.
+#include <PubSubClient.h>
+PubSubClient client(clienteWiFi);
+long lastMsg = 0;
+
+const char* mqtt_server = "broker.hivemq.com";
+const char* channelTopic = "/medicion/temperatura";
+const char* channelTopic2 = "/medicion/oximetria";
+const char* channelTopic3 = "/medicion/frecuencia";
+
 void setup(){
   // Para depurar por el puerto serial.
   abrirSerial();
@@ -67,13 +81,19 @@ void setup(){
   int pulseWidth = 411; //Options: 69, 118, 215, 411
   int adcRange = 4096; //Options: 2048, 4096, 8192, 16384  
   particleSensor.setup(ledBrightness, sampleAverage, ledMode, sampleRate, pulseWidth, adcRange); //Configure sensor with these settings
+
+  // botones
   pinMode(D5, INPUT);
   pinMode(D6, INPUT);
+
+  // mqtt setup
+  client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);
 }
 
 void loop(){
 
-  Serial.println("\nBienvenido usuario a la estación de monitoreo receptora Monitoreo es salud\n");
+  Serial.println("\nBienvenido usuario a la estación de monitoreo mensajera Monitoreo es salud\n");
   imprimePantalla("Bienvenido");
   delay(5000);
 
@@ -82,17 +102,66 @@ void loop(){
   // Hacer y enviar las medidas que el usuario quiera.
   bool quiereMedirTemperatura = pregunta("Quiere medir su temperatura?");
   if (quiereMedirTemperatura){
-    medicionTemperatura(claveUsuario);
+    bool temperaturaTiempoReal = pregunta("temperatura tiempo real?");
+    if (temperaturaTiempoReal){
+      medicionTemperatura(claveUsuario, true);
+    } else{
+      medicionTemperatura(claveUsuario, false);
+    }
   }
 
   bool quiereMedirOximetriaFrecuencia = pregunta("Medir oximetria y frecuencia?");
   if (quiereMedirOximetriaFrecuencia){
-    medicionOximetriaFrecuenciaCardiaca(claveUsuario);
+    bool oximetriaFrecuenciaTiempoReal = pregunta("frecuencia, oxi. tiempo real?");
+    if (oximetriaFrecuenciaTiempoReal){
+      medicionOximetriaFrecuenciaCardiaca(claveUsuario, true);
+    } else{
+      medicionOximetriaFrecuenciaCardiaca(claveUsuario, false);
+    }
   }
   
-  // última opción enviar medidas en tiempo real a mqtt.
   delay(100000);
 }
+
+void callback(char* topic, byte* payload, unsigned int length){
+  char *cstring = (char *) payload;
+  cstring[length] = '\0';    // Agrega un caracter de terminación
+  Serial.println(cstring);
+  if (cstring[1]=='R') {
+  Serial.println("\tRojo");
+  digitalWrite(LED_BUILTIN,HIGH);
+  }else if (cstring[1]=='G') {
+  Serial.println("\tVerde");
+  digitalWrite(LED_BUILTIN,LOW);
+  } else if (cstring[1]=='B') {
+  Serial.println("\tAzul");
+  digitalWrite(LED_BUILTIN,LOW);
+  }
+} //termina callback 
+
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()){
+    Serial.print("Attempting MQTT connection...");
+    // Create a random client ID
+    String clientId = "ESP8266Client-";
+    clientId += String(random(0xffff), HEX);
+    // Attempt to connect
+    //if you MQTT broker has clientID,username and password
+   //please change following line to    if (client.connect(clientId,userName,passWord))
+    if (client.connect(clientId.c_str())){
+      Serial.println("connected");
+     //once connected to MQTT broker, subscribe command if any
+      client.subscribe(channelTopic);
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 6 seconds before retrying
+      delay(6000);
+    }
+  }
+} //termina reconnect()
 
 void imprimePantalla(String texto){
   lcd.clear();
@@ -227,7 +296,7 @@ String decapitalize(String palabra){
   return final+palabra.substring(1);
 }
 
-void medicionTemperatura(String claveUsuario){
+void medicionTemperatura(String claveUsuario, bool mqtt){
   // Lectura de temperatura y humedad.
   float temperaturas[100];
   float promedioTemperatura = 0;
@@ -244,10 +313,17 @@ void medicionTemperatura(String claveUsuario){
     }
   }
   promedioTemperatura /= 10;
+  if (mqtt){
+    if (!client.connected()){
+        reconnect();
+    }
+    client.loop();
+    client.publish(channelTopic, String(promedioTemperatura).c_str());
+  }  
   enviarDatos("TemperaturaCorporal", promedioTemperatura, claveUsuario, "DHT11");
 }
 
-void medicionOximetriaFrecuenciaCardiaca(String claveUsuario){
+void medicionOximetriaFrecuenciaCardiaca(String claveUsuario, bool mqtt){
   // Esperar indicación de usuario para comenzar a medir.
   Serial.println("\nColoque su sensor de oximetría contra su dedo firmemente. Cuando este listo mande byte a puerto serial.\n");
   imprimePantalla("mande señal cuando este listo");
@@ -297,6 +373,15 @@ void medicionOximetriaFrecuenciaCardiaca(String claveUsuario){
   }
   //After gathering 25 new samples recalculate HR and SP02
   maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
+  if (mqtt){
+    if (!client.connected()){
+        reconnect();
+    }
+    client.loop();
+    client.publish(channelTopic2, String(spo2).c_str());
+    client.publish(channelTopic3, String(heartRate).c_str());
+  }
+  delay(5000);
   enviarDatos("Oximetria", spo2, claveUsuario, "MAX30102");
   enviarDatos("FrecuenciaCardiaca", heartRate, claveUsuario, "MAX30102");
 }
