@@ -8,7 +8,7 @@ Por Luis Ignacio Ferro Salinas A01378248
 Última modificación: 1 de diciembre de 2020
 
 */
-
+// Preprocesamiento de pantalla lcd.
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -43,9 +43,12 @@ String urlBase = "http://192.168.0.108/IoT";  // GET? Ari: 192.168.1.90
 HTTPClient http;
 WiFiClient clienteWiFi;
  
-void setup() {
+void setup(){
   // Para depurar por el puerto serial.
   abrirSerial();
+  // Inicialización de pantalla lcd.
+  lcd.init();
+  lcd.backlight();
   // Conectarse a la red.
   conectarARed();
   // Inicialización de temperatura.
@@ -53,6 +56,7 @@ void setup() {
   // Inicializar sensor de oximetría.
   if (!particleSensor.begin(Wire, I2C_SPEED_FAST)){
     Serial.println(F("No se encontró el sensor de oximetría"));
+    imprimePantalla("No sensor :(");
     while(1); // Terminar.
   }
   // Setup de sensor.
@@ -63,7 +67,6 @@ void setup() {
   int pulseWidth = 411; //Options: 69, 118, 215, 411
   int adcRange = 4096; //Options: 2048, 4096, 8192, 16384  
   particleSensor.setup(ledBrightness, sampleAverage, ledMode, sampleRate, pulseWidth, adcRange); //Configure sensor with these settings
-
   pinMode(D5, INPUT);
   pinMode(D6, INPUT);
 }
@@ -77,12 +80,12 @@ void loop(){
   String claveUsuario = obtenerClaveUsuario();
   
   // Hacer y enviar las medidas que el usuario quiera.
-  bool quiereMedirTemperatura = pregunta("¿Quiere medir su temperatura?");
+  bool quiereMedirTemperatura = pregunta("Quiere medir su temperatura?");
   if (quiereMedirTemperatura){
     medicionTemperatura(claveUsuario);
   }
 
-  bool quiereMedirOximetriaFrecuencia = pregunta("¿Quiere medir su oximetría y frecuencia cardíaca?");
+  bool quiereMedirOximetriaFrecuencia = pregunta("Medir oximetria y frecuencia?");
   if (quiereMedirOximetriaFrecuencia){
     medicionOximetriaFrecuenciaCardiaca(claveUsuario);
   }
@@ -92,12 +95,21 @@ void loop(){
 }
 
 void imprimePantalla(String texto){
-  // texto menor a 16 caracteres.
   lcd.clear();
-  lcd.print(texto);
+  lcd.setCursor(0, 0);
+  if (texto.length() > 15){
+    String parteUno = texto.substring(0, 15);
+    lcd.print(parteUno);
+    lcd.setCursor(0, 1);
+    String parteDos = texto.substring(16, 31);
+    lcd.print(parteDos);
+  } else{
+    lcd.print(texto);
+  }
 }
 
 String obtenerClaveUsuario(){
+  String claveUsuario;
   bool usuarioNuevo = pregunta("Hola buen usuario, es nuevo?");
   if (usuarioNuevo){
     // query para obtener clave de nuevo usuario
@@ -107,15 +119,24 @@ String obtenerClaveUsuario(){
     claveUsuario = String(claveUsuarioInt);
     Serial.println("\Su clave de usuario será: ");
     Serial.println(claveUsuario);
+    imprimePantalla("Su clave sera: ");
+    delay(5000);
+    imprimePantalla(claveUsuario);
+    delay(5000);
     Serial.println("\nNo la olvide\n");
+    imprimePantalla("No la olvide");
     delay(5000);
     Serial.println("Por favor diríjase a la liga: y registre sus datos en el formulario. Cuando esté listo, envíe algo por el puerto serial.");
-    while (Serial.available){
+    imprimePantalla("LLene formulario");
+    while (Serial.available() == 0){
       Serial.read();      
     }
+    Serial.print("Ya se insertó como usuario");
+    imprimePantalla("formulario listo");
     delay(5000);
   } else{
       Serial.println("\nEscriba su número de usuario en el puerto serial.\n");
+      imprimePantalla("Escriba clave");
       while (1){
         if (Serial.available() > 0){
           claveUsuario = Serial.readString();
@@ -125,8 +146,12 @@ String obtenerClaveUsuario(){
       claveUsuario.replace("\n", "");
       Serial.println("\nHa confirmado que su número de usuario es ");
       Serial.println(claveUsuario);
+      imprimePantalla("Su clave es");
+      delay(5000);
+      imprimePantalla(claveUsuario);
       delay(5000);
   }
+  return claveUsuario;
 }
 
 
@@ -172,6 +197,8 @@ void enviarDatos(String tabla, float promedioMedicion, String claveUsuario, Stri
     Serial.println("No es posible hacer la conexión");
   }
   http.end();
+  imprimePantalla("Se han guardado los datos");
+  delay(5000);
 }
 
 void abrirSerial() {
@@ -204,8 +231,14 @@ void medicionTemperatura(String claveUsuario){
   // Lectura de temperatura y humedad.
   float temperaturas[100];
   float promedioTemperatura = 0;
+  Serial.println("\n Mande señal al puerto serial cuando este listo");
+  imprimePantalla("mande señal cuando este listo");
+  while (Serial.available() == 0){
+      Serial.read();
+  }
   for (int i = 1; i <= 99; i++){
     temperaturas[i] = dht.readTemperature();
+    imprimePantalla("Leyendo temperatura");
     if(i>89){
       promedioTemperatura += temperaturas[i];
     }
@@ -217,6 +250,7 @@ void medicionTemperatura(String claveUsuario){
 void medicionOximetriaFrecuenciaCardiaca(String claveUsuario){
   // Esperar indicación de usuario para comenzar a medir.
   Serial.println("\nColoque su sensor de oximetría contra su dedo firmemente. Cuando este listo mande byte a puerto serial.\n");
+  imprimePantalla("mande señal cuando este listo");
   while(Serial.available() == 0){
     Serial.read();  
   }
@@ -234,6 +268,7 @@ void medicionOximetriaFrecuenciaCardiaca(String claveUsuario){
     Serial.print(redBuffer[i], DEC);
     Serial.print(F(", ir="));
     Serial.println(irBuffer[i], DEC);
+    imprimePantalla("midiendo oximetria y frecuencia");
   }
   maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
   for (byte i = 25; i < 100; i++){
@@ -257,12 +292,11 @@ void medicionOximetriaFrecuenciaCardiaca(String claveUsuario){
 
     Serial.print(F(", SPO2Valid="));
     Serial.println(validSPO2, DEC);
+    imprimePantalla("midiendo oximetria y frecuencia");
     //send samples and calculation result to terminal program through UART
   }
   //After gathering 25 new samples recalculate HR and SP02
   maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
-  Serial.println(String(validSPO2));
-  Serial.println(String(validHeartRate));
   enviarDatos("Oximetria", spo2, claveUsuario, "MAX30102");
   enviarDatos("FrecuenciaCardiaca", heartRate, claveUsuario, "MAX30102");
 }
@@ -275,24 +309,29 @@ bool pregunta(String textoPregunta){
  byte boton1 = false;
  byte boton2 = false;
  Serial.println(textoPregunta);
+ imprimePantalla(textoPregunta);
  delay(5000);
  while(true){
   boton1 = digitalRead(D5);
   boton2 = digitalRead(D6);
   if (boton1 && not boton2){
     Serial.println("\nHa respondido sí.");
+    imprimePantalla("Si");
     delay(5000);
     return true;
-  }else if (not boton1 && boton2){
-    Serial.println("Ha respondido no.");
+  } else if (not boton1 && boton2){
+    Serial.println("\nHa respondido no.");
+    imprimePantalla("No");
     delay(5000);
     return false;
-  }else{
+  } else{
     if (!esperando){
       Serial.println("Esperando");
+      imprimePantalla("Esperando");
       esperando = true;
     } else{
       Serial.print(".");
+      imprimePantalla("Esperando respuesta");
     }
   } 
   delay(10); //Para solucionar error de reset
