@@ -5,7 +5,7 @@ Programa principal de interacción entre usuario y estación mensajera para guar
 Por Luis Ignacio Ferro Salinas A01378248
     Ariadna Huesca Coronado A01749161
 
-Última modificación: 1 de diciembre de 2020
+Última modificación: 4 de diciembre de 2020
 
 */
 
@@ -40,7 +40,7 @@ DHT dht(dht_dpin, DHTTYPE);
 const char *red = "FerSal";//Ari: INFINITUMC99E  
                                    // Red Luis Ferro: FerSal
 const char *password = "0037605980";//Ari: FEw3Cp4M2j
-String urlBase = "http://189.225.127.57/IoT";  // GET? Ari: 192.168.1.90
+String urlBase = "http://192.168.0.108/IoT";  // GET? Ari: 192.168.1.90
                                                              // Ip interna de compu Luis Ferro: 192.168.0.108
                                                              // La ip pública de Ari receptora es 189.225.127.57
 HTTPClient http;
@@ -173,7 +173,7 @@ void imprimePantalla(String texto){
   lcd.clear();
   lcd.setCursor(0, 0);
   if (texto.length() > 15){
-    String parteUno = texto.substring(0, 15);
+    String parteUno = texto.substring(0, 16);
     lcd.print(parteUno);
     lcd.setCursor(0, 1);
     String parteDos = texto.substring(16, 31);
@@ -265,15 +265,16 @@ void enviarDatos(String tabla, float promedioMedicion, String claveUsuario, Stri
       if (codigo == HTTP_CODE_OK || codigo == HTTP_CODE_MOVED_PERMANENTLY){
         String respuesta = http.getString();  // Respuesta
         Serial.println(respuesta);
+        imprimePantalla("Se han guardado los datos");
+        delay(5000);
       } else{
       Serial.printf("GET falló, error: %s\n", http.errorToString(codigo).c_str());
     }
   } else{
     Serial.println("No es posible hacer la conexión");
+    imprimePantalla("No se conecto");
   }
   http.end();
-  imprimePantalla("Se han guardado los datos");
-  delay(5000);
 }
 
 void abrirSerial() {
@@ -355,32 +356,34 @@ void medicionOximetriaFrecuenciaCardiaca(String claveUsuario, bool mqtt){
     imprimePantalla("midiendo oximetria y frecuencia");
   }
   maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
-  for (byte i = 25; i < 100; i++){
-    redBuffer[i - 25] = redBuffer[i];
-    irBuffer[i - 25] = irBuffer[i];
+  while (!validSPO2 || !validHeartRate){
+    for (byte i = 25; i < 100; i++){
+      redBuffer[i - 25] = redBuffer[i];
+      irBuffer[i - 25] = irBuffer[i];
+    }
+    for (byte i = 75; i < 100; i++){
+      while (particleSensor.available() == false) //do we have new data?
+        particleSensor.check(); //Check the sensor for new data
+      redBuffer[i] = particleSensor.getRed();
+      irBuffer[i] = particleSensor.getIR();
+      particleSensor.nextSample(); //We're finished with this sample so move to next sample
+      Serial.print(F(", HR="));
+      Serial.print(heartRate, DEC);
+  
+      Serial.print(F(", HRvalid="));
+      Serial.print(validHeartRate, DEC);
+  
+      Serial.print(F(", SPO2="));
+      Serial.print(spo2, DEC);
+  
+      Serial.print(F(", SPO2Valid="));
+      Serial.println(validSPO2, DEC);
+      imprimePantalla("midiendo oximetria y frecuencia");
+      //send samples and calculation result to terminal program through UART
+    }
+    //After gathering 25 new samples recalculate HR and SP02
+    maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
   }
-  for (byte i = 75; i < 100; i++){
-    while (particleSensor.available() == false) //do we have new data?
-      particleSensor.check(); //Check the sensor for new data
-    redBuffer[i] = particleSensor.getRed();
-    irBuffer[i] = particleSensor.getIR();
-    particleSensor.nextSample(); //We're finished with this sample so move to next sample
-    Serial.print(F(", HR="));
-    Serial.print(heartRate, DEC);
-
-    Serial.print(F(", HRvalid="));
-    Serial.print(validHeartRate, DEC);
-
-    Serial.print(F(", SPO2="));
-    Serial.print(spo2, DEC);
-
-    Serial.print(F(", SPO2Valid="));
-    Serial.println(validSPO2, DEC);
-    imprimePantalla("midiendo oximetria y frecuencia");
-    //send samples and calculation result to terminal program through UART
-  }
-  //After gathering 25 new samples recalculate HR and SP02
-  maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
   if (mqtt){
     if (!client.connected()){
         reconnect();
